@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Unsubscribe</title>
+<style>
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #1a1a1a; background: #ffffff; }
+  main { max-width: 32rem; margin: 4rem auto; padding: 0 1rem; line-height: 1.5; }
+  h1 { font-size: 1.4rem; font-weight: 600; }
+  p { font-size: 1.05rem; }
+</style>
+</head>
+<body>
+<main>
+<h1>Unsubscribe</h1>
+<p id="message" role="status" aria-live="polite"></p>
+<noscript><p>This page needs JavaScript to unsubscribe you. Instead, reply to the email with the word unsubscribe and we will stop.</p></noscript>
+</main>
+<script>
+  const FUNCTION_URL = "https://upreyitqeaahmknzsakf.supabase.co/functions/v1/unsubscribe";
+  const TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const DONE = "You are unsubscribed. You will get no more emails from us.";
+  const UNKNOWN = "This unsubscribe link is not recognised. Reply to the email with the word unsubscribe.";
+  const BROKEN = "Something went wrong. Reply to the email with the word unsubscribe.";
+
+  const TIMEOUT_MS = 20000;
+
+  const message = document.getElementById("message");
+  const t = new URLSearchParams(location.search).get("t");
+
+  if (t === null || !TOKEN.test(t)) {
+    message.textContent = UNKNOWN;
+  } else {
+    message.textContent = "Unsubscribing…";
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    fetch(FUNCTION_URL + "?t=" + encodeURIComponent(t), {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "List-Unsubscribe=One-Click",
+      signal: controller.signal,
+    }).finally(() => {
+      clearTimeout(timer);
+    }).then(
+      (response) => {
+        if (response.status === 200) {
+          message.textContent = DONE;
+        } else if (response.status === 404) {
+          message.textContent = UNKNOWN;
+        } else {
+          message.textContent = BROKEN;
+        }
+      },
+      () => {
+        message.textContent = BROKEN;
+      },
+    );
+  }
+</script>
+</body>
+</html>
